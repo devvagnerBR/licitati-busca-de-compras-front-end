@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust:100%;
+}
+
+
+body {
+    @apply text-neutral-800 font-light text-18 antialiased outline-none font-inter;
+}
+
+input {
+    @apply h-[42px] border pl-2 focus:outline-none focus:ring-0 border-neutral-300 text-cyan-500 font-light text-[18px];
+}
+select {
+    @apply h-[42px] border rounded-none pl-2 focus:outline-none focus:ring-0 text-cyan-500  border-neutral-300 bg-white font-light text-[18px];
+}
+
+option{
+    @apply text-neutral-800 font-light
+}
+button{
+    @apply  text-white font-semibold bg-cyan-500 h-[42px] cursor-pointer;
+}
+
+label{
+    @apply text-[14px] text-neutral-800 font-semibold
+}
