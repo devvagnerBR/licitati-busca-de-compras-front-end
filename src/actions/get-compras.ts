@@ -1,6 +1,6 @@
 
 
-import { filtrosZodData } from "@/app/licitati/components/form-filters";
+import { filtrosZodData } from "@/app/busca/components/form-filters";
 
 export interface UniqueCompraProps {
   query: {

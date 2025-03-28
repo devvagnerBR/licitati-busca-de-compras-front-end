@@ -1,8 +1,8 @@
 'use client'
 
-import { formatToBRLCurrency } from "@/app/licitati/util/format-to-BRL";
-import { highlightText } from "@/app/licitati/util/highlight-text";
-import { useMoment } from "@/app/licitati/util/moment-js";
+import { formatToBRLCurrency } from "@/app/busca/util/format-to-BRL";
+import { highlightText } from "@/app/busca/util/highlight-text";
+import { useMoment } from "@/app/busca/util/moment-js";
 import { ITEM_PAC_INTERFACE } from "@/types/pac/item";
 import { FileCsv } from "@phosphor-icons/react";
 import Link from "next/link";

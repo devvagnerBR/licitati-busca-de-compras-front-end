@@ -300,7 +300,7 @@ export function FormFilters( { setCompras, setLoading }: FormFiltersProps ) {
         // Remove duplicatas
         allRequests = Array.from( new Set( allRequests ) );
         setCompras( allRequests );
-        router.push( `/licitati?${queryString}` );
+        router.push( `/busca?${queryString}` );
       }
     } catch ( error ) {
       console.error( 'Erro durante as requisições:', error );
@@ -345,7 +345,7 @@ export function FormFilters( { setCompras, setLoading }: FormFiltersProps ) {
     reset();
     setCompras( [] );
     setLoading( false );
-    router.push( '/licitati' );
+    router.push( '/busca' );
   }
 
 
