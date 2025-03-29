@@ -4,6 +4,7 @@ import { filtrosZodData } from "@/app/busca/components/form-filters";
 
 export interface UniqueCompraProps {
   query: {
+    page?: string;
     termo: string;
     tipoDeBusca: string;
     ano: string;
@@ -30,11 +31,11 @@ export async function getCompras( { query, controller }: UniqueCompraProps ) {
     const {
       termo, tipoDeBusca, ano, statusDaCompra,
       filtrarPor, de, ate, situacaoDaCompra,
-      camposDeBusca, incluir, excluir
+      camposDeBusca, incluir, excluir, page
 
     } = query;
 
-    const fetchURL = `${URL}/v2/compra?page=1&limit=100&documentType=edital&statusDaCompra=${statusDaCompra}&termo=${termo}&ano=${ano}&tipoDeBusca=${tipoDeBusca}&filtrarPor=${filtrarPor}&de=${de}&ate=${ate}&situacaoDaCompra=${situacaoDaCompra}&camposDeBusca=${camposDeBusca}&incluir=${incluir}&excluir=${excluir}`
+    const fetchURL = `${URL}/v2/compra?page=${page}&limit=100&documentType=edital&statusDaCompra=${statusDaCompra}&termo=${termo}&ano=${ano}&tipoDeBusca=${tipoDeBusca}&filtrarPor=${filtrarPor}&de=${de}&ate=${ate}&situacaoDaCompra=${situacaoDaCompra}&camposDeBusca=${camposDeBusca}&incluir=${incluir}&excluir=${excluir}`
     const response = await fetch( fetchURL, {
       method: 'GET',
       signal: controller?.signal,

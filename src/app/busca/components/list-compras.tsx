@@ -1,9 +1,9 @@
 'use client'
 
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ComprasProps } from "../types/compra";
 import { filtrosZodData } from "./form-filters";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getCompras } from "@/actions/get-compras";
 import { useMoment } from "../util/moment-js";
 import { formatToBRLCurrency } from "../util/format-to-BRL";
@@ -23,6 +23,7 @@ export function ListCompras( { loading, compras, setCompras }: ListComprasProps 
   const searchParams = useSearchParams();
   const rawParamsObj = Object.fromEntries( searchParams );
   const [showScrollButton, setShowScrollButton] = useState( false );
+  const [loadingPage, setLoadingPage] = useState( false );
 
   // Parse as requests que são strings JSON
   const searchParamsObj = {
@@ -71,6 +72,7 @@ export function ListCompras( { loading, compras, setCompras }: ListComprasProps 
         const result = await getCompras( {
           query: {
             ...requestParams,
+            page: requestParams.page || '1',
             termo: requestParams.requestOne.termo,
             tipoDeBusca: requestParams.requestOne.tipoDeBusca,
             ano: requestParams.ano || '',
@@ -92,6 +94,8 @@ export function ListCompras( { loading, compras, setCompras }: ListComprasProps 
     }
 
     async function fetchCompras() {
+
+
       try {
         const { requestOne, requestTwo, requestThree, requestFour, requestFive, ...commonData } = searchParamsObj;
 
@@ -129,7 +133,7 @@ export function ListCompras( { loading, compras, setCompras }: ListComprasProps 
     }
 
     fetchCompras();
-  }, [searchParams] ); // Adiciona searchParams como dependência
+  }, [searchParams, searchParamsObj.page] ); // Adiciona searchParams como dependência
 
 
   const searchTerms = [
@@ -185,6 +189,66 @@ export function ListCompras( { loading, compras, setCompras }: ListComprasProps 
     return () => window.removeEventListener( 'scroll', handleScroll );
   }, [] );
 
+
+  const router = useRouter();
+
+
+  const handlePageChange = async ( page: number ) => {
+    try {
+      setLoadingPage( true );
+      const newParams = new URLSearchParams( searchParams.toString() );
+      newParams.set( 'page', page.toString() );
+
+      // Fazer a requisição antes de mudar a página
+      const { requestOne, requestTwo, requestThree, requestFour, requestFive, ...commonData } = searchParamsObj;
+
+      // Cria um objeto com os parâmetros da nova página
+      const nextPageParams = {
+        ...searchParamsObj,
+        page: page.toString()
+      };
+
+      const requests = [
+        requestOne,
+        requestTwo,
+        requestThree,
+        requestFour,
+        requestFive,
+      ].filter( ( request ): request is { termo: string; tipoDeBusca: "palavra" | "frase" } =>
+        Boolean( request?.termo && request?.tipoDeBusca && ["palavra", "frase"].includes( request.tipoDeBusca ) )
+      );
+
+      // Buscar dados da próxima página
+      const results = [];
+      for ( const request of requests ) {
+        const result = await makeIndividualRequest( request, {
+          ...commonData,
+          page: page.toString()
+        } );
+        results.push( result );
+        await new Promise( resolve => setTimeout( resolve, 1000 ) );
+      }
+
+      const allRequests = results.flat();
+      const uniqueCompras = Array.from(
+        new Map( allRequests.map( item => [item.compra.id, item] ) ).values()
+      );
+
+      // Atualizar os dados
+      setCompras( uniqueCompras );
+
+      // Só depois navegar para a nova página
+      await router.push( `/busca?${newParams.toString()}` );
+    } catch ( error ) {
+      console.error( 'Erro na navegação:', error );
+    } finally {
+      setLoadingPage( false );
+    }
+  };
+
+
+
+
   if ( loading ) return <p>Buscando compras ...</p>;
   if ( !compras.length ) return <p>Nenhuma compra encontrada!</p>;
   return (
@@ -198,17 +262,35 @@ export function ListCompras( { loading, compras, setCompras }: ListComprasProps 
         </button>
       )}
       <p className="text-14">Itens encontrados: <span className="font-medium">{compras.length}</span></p>
-      <div className="flex gap-4 flex-wrap">
-        {searchTerms.map( ( term, index ) => (
-          <div
-            onClick={() => scrollToTerm( term )}
-            key={index}
-            className={`px-4 cursor-pointer py-2 ${reqColors[index]} flex items-center gap-2 border border-neutral-500`}
-          >
-            <span className="font-medium">Termo {index + 1}:</span>
-            <span>{term}</span>
+      <div className="flex justify-between gap-4 flex-wrap">
+        <div className="flex gap-2">
+          {searchTerms.map( ( term, index ) => (
+            <div
+              onClick={() => scrollToTerm( term )}
+              key={index}
+              className={`px-4 cursor-pointer py-2 ${reqColors[index]} flex items-center gap-2 border border-neutral-500`}>
+              <span className="font-medium">Termo {index + 1}:</span>
+              <span>{term}</span>
+            </div>
+          ) )}
+        </div>
+        <div className="flex *:px-4 *:py-2 gap-2">
+          {searchParamsObj.page && Number( searchParamsObj.page ) > 1 && (
+            <div
+              onClick={() => !loadingPage && handlePageChange( Number( searchParamsObj.page ) - 1 )}
+              className={`border-neutral-200 border cursor-pointer ${loadingPage ? 'opacity-50' : ''}`}>
+              {loadingPage ? 'Carregando...' : 'Anterior'}
+            </div>
+          )}
+          <div className="border-neutral-200 border cursor-pointer">
+            {searchParamsObj.page}
           </div>
-        ) )}
+          <div
+            onClick={() => !loadingPage && handlePageChange( Number( searchParamsObj.page ) + 1 )}
+            className={`border-neutral-200 border cursor-pointer ${loadingPage ? 'opacity-50' : ''}`}>
+            {loadingPage ? 'Carregando...' : 'Próxima'}
+          </div>
+        </div>
       </div>
       <div className="flex flex-col gap-4">
         {compras.map( ( compra, index ) => {
@@ -384,4 +466,42 @@ export function ListCompras( { loading, compras, setCompras }: ListComprasProps 
       </div>
     </div>
   );
+}
+async function makeIndividualRequest(
+  request: { termo: string; tipoDeBusca: "palavra" | "frase"; },
+  commonData: {
+    page: string;
+    ano: string;
+    de: string;
+    ate: string;
+    camposDeBusca: string[];
+    filtrarPor?: string;
+    statusDaCompra?: string;
+    situacaoDaCompra?: string;
+    incluir?: string;
+    excluir?: string;
+  }
+): Promise<ComprasProps[]> {
+  try {
+    const result = await getCompras( {
+      query: {
+        termo: request.termo,
+        tipoDeBusca: request.tipoDeBusca,
+        page: commonData.page || '1',
+        ano: commonData.ano || '',
+        de: commonData.de || '',
+        ate: commonData.ate || '',
+        camposDeBusca: commonData.camposDeBusca || [],
+        filtrarPor: commonData.filtrarPor || '',
+        statusDaCompra: commonData.statusDaCompra || '',
+        situacaoDaCompra: commonData.situacaoDaCompra || '',
+        incluir: commonData.incluir || '',
+        excluir: commonData.excluir || ''
+      }
+    } );
+    return result;
+  } catch ( error ) {
+    console.error( `Erro ao buscar com termo: ${request.termo}`, error );
+    return [];
+  }
 }

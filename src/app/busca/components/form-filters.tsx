@@ -42,6 +42,7 @@ const filtrosZodSchema = z.object( {
     termo: z.string(),
     tipoDeBusca: z.enum( ["palavra", "frase", ""] ).optional(),
   } ).optional(),
+  page: z.string().optional(),
   ano: z.string(),
   filtrarPor: z.string().optional(),
   de: z.string().default( "0" ),
@@ -113,6 +114,7 @@ export function FormFilters( { setCompras, setLoading }: FormFiltersProps ) {
       camposDeBusca: searchParamsObj.camposDeBusca || ["detalhes", "itens", "arquivos"],
       incluir: searchParamsObj.incluir || '',
       excluir: searchParamsObj.excluir || '',
+      page: searchParamsObj.page || '1',
     }
   } );
 
@@ -147,6 +149,8 @@ export function FormFilters( { setCompras, setLoading }: FormFiltersProps ) {
 
   async function handleSearch( data: filtrosZodData ) {
 
+    data.page = '1'; // Reseta a página para 1 ao fazer uma nova busca
+
     setLoading( true );
     setCompras( [] );
 
@@ -173,7 +177,6 @@ export function FormFilters( { setCompras, setLoading }: FormFiltersProps ) {
       return acc;
     }, {} as Record<string, { termo: string; tipoDeBusca: "palavra" | "frase" }> );
 
-
     const query = {
       ...validRequests, // Adiciona as requests válidas
       ano: data.ano || '',
@@ -185,6 +188,7 @@ export function FormFilters( { setCompras, setLoading }: FormFiltersProps ) {
       camposDeBusca: data.camposDeBusca || [],
       incluir: data.incluir || '',
       excluir: data.excluir || '',
+      page: data.page || '1',
     };
 
     // Remove valores vazios
@@ -249,7 +253,8 @@ export function FormFilters( { setCompras, setLoading }: FormFiltersProps ) {
             situacaoDaCompra: requestParams.situacaoDaCompra || '',
             camposDeBusca: requestParams.camposDeBusca || [],
             incluir: requestParams.incluir || '',
-            excluir: requestParams.excluir || ''
+            excluir: requestParams.excluir || '',
+            page: requestParams.page || '1',
           },
           controller: abortControllerRef.current || undefined
         } );
@@ -307,39 +312,7 @@ export function FormFilters( { setCompras, setLoading }: FormFiltersProps ) {
     } finally {
       setLoading( false );
     }
-
-
-    // Remove duplicatas (caso necessário)
-    // allRequests = Array.from( new Set( allRequests ) );
-    // // Atualiza o estado com todos os resultados
-    // setCompras( allRequests );
-    // setLoading( false );
-
-    // // Atualiza a URL
-    // router.push( `/licitati?${queryString}` );
-
-
-
-
-    // // Faz todas as requisições em paralelo
-    // const reqs = Object.values( validRequests );
-    // const results = await Promise.all(
-    //   reqs.map( request => makeIndividualRequest( request, commonData ) )
-    // );
-
-    // // Combina todos os resultados em um único array
-    // allRequests = results.flat();
-    // // Remove duplicatas (caso necessário)
-    // allRequests = Array.from( new Set( allRequests ) );
-    // // Atualiza o estado com todos os resultados
-    // setCompras( allRequests );
-    // setLoading( false );
-    // // Atualiza a URL
-    // router.push( `/licitati?${queryString}` )
-
-
   }
-
 
   async function handleReset() {
     reset();
@@ -347,7 +320,6 @@ export function FormFilters( { setCompras, setLoading }: FormFiltersProps ) {
     setLoading( false );
     router.push( '/busca' );
   }
-
 
   async function abortRequest() {
     if ( abortControllerRef.current ) {
